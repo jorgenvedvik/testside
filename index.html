@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Testside – Vercel-demo</title>
+  <meta name="description" content="En enkel testside publisert med GitHub og Vercel.">
+  <style>
+    :root {
+      --bg: #f6f5f1;
+      --fg: #1c1c1a;
+      --muted: #6b6a64;
+      --accent: #2f5bea;
+      --card: #ffffff;
+      --line: #e3e1da;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141413;
+        --fg: #f0efe9;
+        --muted: #a3a29b;
+        --accent: #7c9bff;
+        --card: #1e1e1c;
+        --line: #2e2e2b;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 64px 20px; }
+    .tag {
+      display: inline-block;
+      font-size: 13px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 4px 12px;
+    }
+    h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.1; margin: 20px 0 12px; }
+    .lead { font-size: 19px; color: var(--muted); margin: 0 0 40px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .card h2 { font-size: 17px; margin: 0 0 6px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .num { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+    button {
+      margin-top: 40px;
+      font: inherit;
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 20px;
+      cursor: pointer;
+    }
+    button:hover { opacity: .9; }
+    #melding { margin-top: 12px; color: var(--muted); min-height: 1.6em; }
+    footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="tag">Demo</span>
+    <h1>Hei verden 👋</h1>
+    <p class="lead">Denne siden ligger på GitHub og publiseres automatisk av Vercel hver gang du lagrer en endring.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="num">01</div>
+        <h2>Rediger</h2>
+        <p>Endre index.html på GitHub eller lokalt.</p>
+      </div>
+      <div class="card">
+        <div class="num">02</div>
+        <h2>Commit</h2>
+        <p>Lagre endringen til main-branchen.</p>
+      </div>
+      <div class="card">
+        <div class="num">03</div>
+        <h2>Live</h2>
+        <p>Vercel bygger og publiserer på sekunder.</p>
+      </div>
+    </div>
+
+    <button id="knapp">Test at JavaScript virker</button>
+    <p id="melding"></p>
+
+    <footer>Sist oppdatert: <span id="dato"></span></footer>
+  </main>
+
+  <script>
+    document.getElementById('dato').textContent =
+      new Date(document.lastModified).toLocaleString('no-NO');
+    let antall = 0;
+    document.getElementById('knapp').addEventListener('click', () => {
+      antall++;
+      document.getElementById('melding').textContent =
+        `Det virker! Du har klikket ${antall} ${antall === 1 ? 'gang' : 'ganger'}.`;
+    });
+  </script>
+</body>
+</html>
