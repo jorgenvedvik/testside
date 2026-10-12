@@ -4,111 +4,521 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Testside – Vercel-demo</title>
-  <meta name="description" content="En enkel testside publisert med GitHub og Vercel.">
+  <meta name="description" content="En interaktiv testside publisert med GitHub og Vercel.">
   <style>
     :root {
+      --hue: 338;
       --bg: #f6f5f1;
       --fg: #1c1c1a;
       --muted: #6b6a64;
       --accent: #2f5bea;
-      --card: #ffe1ec;
-      --line: #f5b8cf;
+      --surface: #ffffff;
+      --border: #e3e1da;
+      --card: hsl(var(--hue) 100% 94%);
+      --line: hsl(var(--hue) 80% 84%);
+      --card-strong: hsl(var(--hue) 75% 60%);
+      --particle: 47, 91, 234;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme="light"]) {
         --bg: #141413;
         --fg: #f0efe9;
         --muted: #a3a29b;
         --accent: #7c9bff;
-        --card: #4a1f32;
-        --line: #6e2d4a;
+        --surface: #1e1e1c;
+        --border: #2e2e2b;
+        --card: hsl(var(--hue) 40% 21%);
+        --line: hsl(var(--hue) 40% 32%);
+        --card-strong: hsl(var(--hue) 70% 65%);
+        --particle: 124, 155, 255;
       }
     }
+    :root[data-theme="dark"] {
+      --bg: #141413;
+      --fg: #f0efe9;
+      --muted: #a3a29b;
+      --accent: #7c9bff;
+      --surface: #1e1e1c;
+      --border: #2e2e2b;
+      --card: hsl(var(--hue) 40% 21%);
+      --line: hsl(var(--hue) 40% 32%);
+      --card-strong: hsl(var(--hue) 70% 65%);
+      --particle: 124, 155, 255;
+    }
+
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--fg);
       line-height: 1.6;
+      transition: background .3s, color .3s;
     }
-    main { max-width: 720px; margin: 0 auto; padding: 64px 20px; }
+    main { max-width: 760px; margin: 0 auto; padding: 0 20px 64px; }
+
+    /* Topplinje */
+    .topbar {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 760px; margin: 0 auto; padding: 14px 20px;
+      backdrop-filter: blur(8px);
+    }
     .tag {
-      display: inline-block;
-      font-size: 13px;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      border-radius: 999px;
-      padding: 4px 12px;
+      font-size: 13px; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--accent); border: 1px solid var(--accent);
+      border-radius: 999px; padding: 4px 12px;
     }
-    h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.1; margin: 20px 0 12px; }
-    .lead { font-size: 19px; color: var(--muted); margin: 0 0 40px; }
+    .icon-btn {
+      font: inherit; font-size: 18px; width: 40px; height: 40px;
+      border-radius: 50%; border: 1px solid var(--border);
+      background: var(--surface); color: var(--fg); cursor: pointer;
+      transition: transform .3s;
+    }
+    .icon-btn:hover { transform: rotate(20deg); }
+
+    /* Hero med partikler */
+    .hero { position: relative; padding: 72px 0 56px; }
+    #partikler { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+    .hero > *:not(canvas) { position: relative; z-index: 1; pointer-events: none; }
+    h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.1; margin: 0 0 14px; }
+    .skriv { color: var(--card-strong); }
+    .skriv::after { content: "|"; color: var(--fg); animation: blink 1s steps(1) infinite; margin-left: 2px; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .lead { font-size: 19px; color: var(--muted); margin: 0; max-width: 560px; }
+    .hint { font-size: 14px; color: var(--muted); margin-top: 14px; }
+
+    section { margin-top: 72px; }
+    h2 { font-size: 24px; margin: 0 0 6px; }
+    .sub { color: var(--muted); margin: 0 0 22px; }
+
+    /* Avslør ved scroll */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.synlig { opacity: 1; transform: none; }
+
+    /* Vendbare kort */
     .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 20px;
+    .kort { perspective: 900px; height: 170px; cursor: pointer; }
+    .kort-tilt { width: 100%; height: 100%; transition: transform .15s ease-out; transform-style: preserve-3d; }
+    .kort-inner {
+      position: relative; width: 100%; height: 100%;
+      transition: transform .6s cubic-bezier(.3,1.4,.5,1); transform-style: preserve-3d;
     }
-    .card h2 { font-size: 17px; margin: 0 0 6px; }
-    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .kort.snudd .kort-inner { transform: rotateY(180deg); }
+    .side {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 20px;
+      transition: background .3s, border-color .3s;
+    }
+    .side.bak { transform: rotateY(180deg); display: flex; align-items: center; font-size: 15px; }
+    .side h3 { font-size: 17px; margin: 0 0 6px; }
+    .side p { margin: 0; color: var(--muted); font-size: 15px; }
     .num { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
-    button {
-      margin-top: 40px;
-      font: inherit;
-      background: var(--accent);
-      color: #fff;
-      border: 0;
-      border-radius: 10px;
-      padding: 12px 20px;
-      cursor: pointer;
+
+    /* Fargelekeplass */
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px;
     }
-    button:hover { opacity: .9; }
-    #melding { margin-top: 12px; color: var(--muted); min-height: 1.6em; }
-    footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+    input[type=range] { width: 100%; accent-color: var(--card-strong); }
+    .swatches { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .swatch {
+      width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border);
+      cursor: pointer; transition: transform .2s;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .hue-verdi { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+
+    /* Øyne */
+    .oyne-wrap { display: flex; justify-content: center; }
+    #oyne { width: 260px; max-width: 100%; height: auto; }
+
+    /* Gjøremål */
+    .todo-form { display: flex; gap: 10px; }
+    .todo-form input {
+      flex: 1; font: inherit; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    }
+    button.primar {
+      font: inherit; background: var(--accent); color: #fff; border: 0;
+      border-radius: 10px; padding: 10px 18px; cursor: pointer;
+    }
+    button.primar:hover { opacity: .9; }
+    ul.todo { list-style: none; padding: 0; margin: 16px 0 0; }
+    ul.todo li {
+      display: flex; align-items: center; gap: 12px; padding: 10px 4px;
+      border-bottom: 1px solid var(--border); animation: inn .3s ease;
+    }
+    ul.todo li.ferdig span { text-decoration: line-through; color: var(--muted); }
+    ul.todo li span { flex: 1; }
+    ul.todo input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+    .slett { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 18px; }
+    .slett:hover { color: #e5484d; }
+    .tom { color: var(--muted); font-size: 14px; margin-top: 12px; }
+    @keyframes inn { from { opacity: 0; transform: translateX(-10px); } }
+
+    /* Spill */
+    .spill-info { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+    .spill-info b { font-size: 22px; display: block; }
+    .spill-info small { color: var(--muted); }
+    #arena {
+      position: relative; height: 260px; border-radius: 14px;
+      background: var(--card); border: 1px dashed var(--line); overflow: hidden;
+    }
+    #blink {
+      position: absolute; width: 46px; height: 46px; border-radius: 50%;
+      border: 0; background: var(--card-strong); cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,.18);
+      transition: left .15s, top .15s, transform .1s;
+      display: none;
+    }
+    #blink:active { transform: scale(.85); }
+    .arena-tekst {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 20px; color: var(--muted);
+    }
+    .pling {
+      position: absolute; font-weight: 700; color: var(--accent); pointer-events: none;
+      animation: pling .7s ease-out forwards;
+    }
+    @keyframes pling { to { opacity: 0; transform: translateY(-30px); } }
+
+    footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
-  <main>
+  <div class="topbar">
     <span class="tag">Demo</span>
-    <h1>Hei verden 👋</h1>
-    <p class="lead">Denne siden ligger på GitHub og publiseres automatisk av Vercel hver gang du lagrer en endring.</p>
+    <button class="icon-btn" id="tema" aria-label="Bytt mellom lys og mørk modus">🌓</button>
+  </div>
 
-    <div class="grid">
-      <div class="card">
-        <div class="num">01</div>
-        <h2>Rediger</h2>
-        <p>Endre index.html på GitHub eller lokalt.</p>
-      </div>
-      <div class="card">
-        <div class="num">02</div>
-        <h2>Commit</h2>
-        <p>Lagre endringen til main-branchen.</p>
-      </div>
-      <div class="card">
-        <div class="num">03</div>
-        <h2>Live</h2>
-        <p>Vercel bygger og publiserer på sekunder.</p>
-      </div>
-    </div>
+  <main>
+    <header class="hero">
+      <canvas id="partikler" aria-hidden="true"></canvas>
+      <h1>Hei verden 👋<br>Dette er <span class="skriv" id="skriv"></span></h1>
+      <p class="lead">Denne siden ligger på GitHub og publiseres automatisk av Vercel hver gang en endring lagres.</p>
+      <p class="hint">Beveg musa over feltet her – partiklene reagerer.</p>
+    </header>
 
-    <button id="knapp">Test at JavaScript virker</button>
-    <p id="melding"></p>
+    <section class="reveal">
+      <h2>Slik fungerer det</h2>
+      <p class="sub">Hold musa over kortene for å vippe dem, klikk for å snu dem.</p>
+      <div class="grid">
+        <div class="kort" tabindex="0">
+          <div class="kort-tilt"><div class="kort-inner">
+            <div class="side"><div class="num">01</div><h3>Rediger</h3><p>Beskriv endringen du vil ha i chatten.</p></div>
+            <div class="side bak">Claude endrer filene i repoet ditt – HTML, CSS og JavaScript.</div>
+          </div></div>
+        </div>
+        <div class="kort" tabindex="0">
+          <div class="kort-tilt"><div class="kort-inner">
+            <div class="side"><div class="num">02</div><h3>Commit</h3><p>Endringen lagres til main-branchen.</p></div>
+            <div class="side bak">Hver commit er et lagringspunkt du alltid kan gå tilbake til.</div>
+          </div></div>
+        </div>
+        <div class="kort" tabindex="0">
+          <div class="kort-tilt"><div class="kort-inner">
+            <div class="side"><div class="num">03</div><h3>Live</h3><p>Vercel bygger og publiserer på sekunder.</p></div>
+            <div class="side bak">Vercel lytter på GitHub og publiserer automatisk ved hver push.</div>
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2>Fargelekeplass</h2>
+      <p class="sub">Dra i slideren – hele siden bruker samme fargevariabel.</p>
+      <div class="panel">
+        <input type="range" id="hue" min="0" max="360" value="338" aria-label="Fargetone">
+        <div class="hue-verdi">Fargetone: <span id="hueVerdi">338</span>°</div>
+        <div class="swatches" id="swatches"></div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2>Noen holder øye med deg</h2>
+      <p class="sub">En SVG-tegning som følger musepekeren (eller fingeren).</p>
+      <div class="panel oyne-wrap">
+        <svg id="oyne" viewBox="0 0 260 130" role="img" aria-label="To øyne som følger pekeren">
+          <g>
+            <ellipse cx="75" cy="65" rx="52" ry="52" fill="var(--surface)" stroke="var(--fg)" stroke-width="4"/>
+            <circle class="pupill" cx="75" cy="65" r="18" fill="var(--fg)"/>
+            <circle class="glimt" cx="81" cy="59" r="5" fill="var(--surface)"/>
+          </g>
+          <g>
+            <ellipse cx="185" cy="65" rx="52" ry="52" fill="var(--surface)" stroke="var(--fg)" stroke-width="4"/>
+            <circle class="pupill" cx="185" cy="65" r="18" fill="var(--fg)"/>
+            <circle class="glimt" cx="191" cy="59" r="5" fill="var(--surface)"/>
+          </g>
+          <rect class="lokk" x="20" y="10" width="110" height="0" fill="var(--card-strong)"/>
+          <rect class="lokk" x="130" y="10" width="110" height="0" fill="var(--card-strong)"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2>Gjøremålsliste</h2>
+      <p class="sub">Lagres i nettleseren din, så den er der neste gang du kommer tilbake.</p>
+      <div class="panel">
+        <form class="todo-form" id="todoForm">
+          <input id="todoInput" placeholder="F.eks. lære litt CSS …" autocomplete="off" aria-label="Nytt gjøremål">
+          <button class="primar" type="submit">Legg til</button>
+        </form>
+        <ul class="todo" id="todoListe"></ul>
+        <p class="tom" id="todoTom">Ingen gjøremål ennå.</p>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2>Minispill: Treff prikken</h2>
+      <p class="sub">Hvor mange klarer du på 15 sekunder?</p>
+      <div class="panel">
+        <div class="spill-info">
+          <div><small>Poeng</small><b id="poeng">0</b></div>
+          <div><small>Tid igjen</small><b id="tid">15.0</b></div>
+          <div><small>Rekord</small><b id="rekord">0</b></div>
+        </div>
+        <div id="arena">
+          <div class="arena-tekst" id="arenaTekst"><button class="primar" id="start">Start spillet</button></div>
+          <button id="blink" aria-label="Treff meg"></button>
+        </div>
+      </div>
+    </section>
 
     <footer>Sist oppdatert: <span id="dato"></span></footer>
   </main>
 
   <script>
-    document.getElementById('dato').textContent =
-      new Date(document.lastModified).toLocaleString('no-NO');
-    let antall = 0;
-    document.getElementById('knapp').addEventListener('click', () => {
-      antall++;
-      document.getElementById('melding').textContent =
-        `Det virker! Du har klikket ${antall} ${antall === 1 ? 'gang' : 'ganger'}.`;
+    const lagre = {
+      hent(k, def) { try { const v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); } catch { return def; } },
+      sett(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+    };
+    const rolig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    document.getElementById('dato').textContent = new Date(document.lastModified).toLocaleString('no-NO');
+
+    /* Tema */
+    const root = document.documentElement;
+    const lagretTema = lagre.hent('tema', null);
+    if (lagretTema) root.dataset.theme = lagretTema;
+    document.getElementById('tema').addEventListener('click', () => {
+      const erMork = root.dataset.theme
+        ? root.dataset.theme === 'dark'
+        : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.dataset.theme = erMork ? 'light' : 'dark';
+      lagre.sett('tema', root.dataset.theme);
     });
+
+    /* Skrivemaskin */
+    const ord = ['en testside.', 'vibecoding.', 'HTML, CSS og JS.', 'live på Vercel.'];
+    const skriv = document.getElementById('skriv');
+    let oi = 0, ci = 0, sletter = false;
+    function tikk() {
+      const w = ord[oi];
+      skriv.textContent = w.slice(0, ci);
+      if (!sletter && ci < w.length) { ci++; setTimeout(tikk, 70); }
+      else if (!sletter) { sletter = true; setTimeout(tikk, 1600); }
+      else if (ci > 0) { ci--; setTimeout(tikk, 35); }
+      else { sletter = false; oi = (oi + 1) % ord.length; setTimeout(tikk, 300); }
+    }
+    if (rolig) skriv.textContent = ord[0]; else tikk();
+
+    /* Partikler */
+    const canvas = document.getElementById('partikler');
+    const ctx = canvas.getContext('2d');
+    const hero = canvas.parentElement;
+    let partikler = [], mus = { x: -999, y: -999 }, W = 0, H = 0;
+    function storrelse() {
+      const dpr = window.devicePixelRatio || 1;
+      W = hero.clientWidth; H = hero.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const n = Math.min(70, Math.floor(W * H / 6000));
+      partikler = Array.from({ length: n }, () => ({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - .5) * .5, vy: (Math.random() - .5) * .5
+      }));
+    }
+    hero.addEventListener('pointermove', e => {
+      const r = canvas.getBoundingClientRect();
+      mus.x = e.clientX - r.left; mus.y = e.clientY - r.top;
+    });
+    hero.addEventListener('pointerleave', () => { mus.x = mus.y = -999; });
+    function tegn() {
+      const farge = getComputedStyle(root).getPropertyValue('--particle').trim();
+      ctx.clearRect(0, 0, W, H);
+      for (const p of partikler) {
+        const dx = p.x - mus.x, dy = p.y - mus.y, d = Math.hypot(dx, dy);
+        if (d < 110) { p.vx += dx / d * .4; p.vy += dy / d * .4; }
+        p.vx *= .96; p.vy *= .96;
+        p.vx += (Math.random() - .5) * .04; p.vy += (Math.random() - .5) * .04;
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+        p.x = Math.max(0, Math.min(W, p.x)); p.y = Math.max(0, Math.min(H, p.y));
+      }
+      for (let i = 0; i < partikler.length; i++) {
+        const a = partikler[i];
+        for (let j = i + 1; j < partikler.length; j++) {
+          const b = partikler[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 100) {
+            ctx.strokeStyle = `rgba(${farge}, ${(1 - d / 100) * .35})`;
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          }
+        }
+        ctx.fillStyle = `rgba(${farge}, .7)`;
+        ctx.beginPath(); ctx.arc(a.x, a.y, 2.2, 0, Math.PI * 2); ctx.fill();
+      }
+      if (!rolig) requestAnimationFrame(tegn);
+    }
+    storrelse(); tegn();
+    addEventListener('resize', storrelse);
+
+    /* Kort: vipp og snu */
+    document.querySelectorAll('.kort').forEach(kort => {
+      const tilt = kort.querySelector('.kort-tilt');
+      kort.addEventListener('pointermove', e => {
+        if (rolig) return;
+        const r = kort.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+        tilt.style.transform = `rotateX(${-y * 14}deg) rotateY(${x * 14}deg)`;
+      });
+      kort.addEventListener('pointerleave', () => { tilt.style.transform = ''; });
+      const snu = () => kort.classList.toggle('snudd');
+      kort.addEventListener('click', snu);
+      kort.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); snu(); } });
+    });
+
+    /* Farge */
+    const hue = document.getElementById('hue'), hueVerdi = document.getElementById('hueVerdi');
+    function settHue(h) {
+      root.style.setProperty('--hue', h); hue.value = h; hueVerdi.textContent = h; lagre.sett('hue', h);
+    }
+    hue.addEventListener('input', () => settHue(hue.value));
+    const swatches = document.getElementById('swatches');
+    [338, 12, 45, 140, 190, 230, 270].forEach(h => {
+      const b = document.createElement('button');
+      b.className = 'swatch'; b.style.background = `hsl(${h} 75% 60%)`;
+      b.setAttribute('aria-label', `Fargetone ${h}`);
+      b.addEventListener('click', () => settHue(h));
+      swatches.appendChild(b);
+    });
+    settHue(lagre.hent('hue', 338));
+
+    /* Øyne */
+    const pupiller = document.querySelectorAll('#oyne .pupill');
+    const glimt = document.querySelectorAll('#oyne .glimt');
+    const svg = document.getElementById('oyne');
+    addEventListener('pointermove', e => {
+      const r = svg.getBoundingClientRect(), skala = 260 / r.width;
+      const mx = (e.clientX - r.left) * skala, my = (e.clientY - r.top) * skala;
+      pupiller.forEach((p, i) => {
+        const cx = i === 0 ? 75 : 185, cy = 65;
+        const vinkel = Math.atan2(my - cy, mx - cx);
+        const avstand = Math.min(26, Math.hypot(mx - cx, my - cy) / 6);
+        const px = cx + Math.cos(vinkel) * avstand, py = cy + Math.sin(vinkel) * avstand;
+        p.setAttribute('cx', px); p.setAttribute('cy', py);
+        glimt[i].setAttribute('cx', px + 6); glimt[i].setAttribute('cy', py - 6);
+      });
+    });
+    const lokk = document.querySelectorAll('#oyne .lokk');
+    function blunk() {
+      if (rolig) return;
+      let h = 0, ned = true;
+      const steg = () => {
+        h += ned ? 22 : -22;
+        if (h >= 110) ned = false;
+        lokk.forEach(l => l.setAttribute('height', Math.max(0, h)));
+        if (h > 0) requestAnimationFrame(steg);
+      };
+      steg();
+      setTimeout(blunk, 2500 + Math.random() * 3500);
+    }
+    setTimeout(blunk, 2000);
+    svg.addEventListener('click', () => { lokk.forEach(l => l.setAttribute('height', 0)); });
+
+    /* Gjøremål */
+    let todos = lagre.hent('todos', [{ tekst: 'Prøv fargelekeplassen', ferdig: false }, { tekst: 'Snu et kort', ferdig: false }]);
+    const liste = document.getElementById('todoListe'), tom = document.getElementById('todoTom');
+    function visTodos() {
+      liste.innerHTML = '';
+      todos.forEach((t, i) => {
+        const li = document.createElement('li');
+        if (t.ferdig) li.classList.add('ferdig');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.checked = t.ferdig;
+        cb.setAttribute('aria-label', 'Marker som ferdig');
+        cb.addEventListener('change', () => { t.ferdig = cb.checked; oppdater(); });
+        const span = document.createElement('span'); span.textContent = t.tekst;
+        const x = document.createElement('button');
+        x.className = 'slett'; x.textContent = '×'; x.setAttribute('aria-label', 'Slett');
+        x.addEventListener('click', () => { todos.splice(i, 1); oppdater(); });
+        li.append(cb, span, x); liste.appendChild(li);
+      });
+      tom.style.display = todos.length ? 'none' : 'block';
+    }
+    function oppdater() { lagre.sett('todos', todos); visTodos(); }
+    document.getElementById('todoForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const inp = document.getElementById('todoInput'), v = inp.value.trim();
+      if (!v) return;
+      todos.push({ tekst: v, ferdig: false }); inp.value = ''; oppdater();
+    });
+    visTodos();
+
+    /* Spill */
+    const arena = document.getElementById('arena'), blinkBtn = document.getElementById('blink');
+    const arenaTekst = document.getElementById('arenaTekst');
+    const poengEl = document.getElementById('poeng'), tidEl = document.getElementById('tid'), rekordEl = document.getElementById('rekord');
+    let poeng = 0, rekord = lagre.hent('rekord', 0), slutt = 0, timer = null;
+    rekordEl.textContent = rekord;
+    function flytt() {
+      const max = 46;
+      blinkBtn.style.left = Math.random() * (arena.clientWidth - max) + 'px';
+      blinkBtn.style.top = Math.random() * (arena.clientHeight - max) + 'px';
+    }
+    function start() {
+      poeng = 0; poengEl.textContent = 0;
+      arenaTekst.style.display = 'none'; blinkBtn.style.display = 'block'; flytt();
+      slutt = performance.now() + 15000;
+      clearInterval(timer);
+      timer = setInterval(() => {
+        const igjen = Math.max(0, slutt - performance.now());
+        tidEl.textContent = (igjen / 1000).toFixed(1);
+        if (igjen <= 0) ferdig();
+      }, 100);
+    }
+    function ferdig() {
+      clearInterval(timer); blinkBtn.style.display = 'none';
+      const ny = poeng > rekord;
+      if (ny) { rekord = poeng; lagre.sett('rekord', rekord); rekordEl.textContent = rekord; }
+      arenaTekst.innerHTML = `<div><p style="margin:0 0 12px;font-size:18px;color:var(--fg)">${ny ? '🏆 Ny rekord: ' : 'Du fikk '}${poeng} poeng!</p><button class="primar" id="start">Prøv igjen</button></div>`;
+      arenaTekst.style.display = 'flex';
+      document.getElementById('start').addEventListener('click', start);
+    }
+    blinkBtn.addEventListener('click', e => {
+      poeng++; poengEl.textContent = poeng;
+      const r = arena.getBoundingClientRect();
+      const p = document.createElement('div');
+      p.className = 'pling'; p.textContent = '+1';
+      p.style.left = (e.clientX - r.left) + 'px'; p.style.top = (e.clientY - r.top - 20) + 'px';
+      arena.appendChild(p); setTimeout(() => p.remove(), 700);
+      flytt();
+    });
+    document.getElementById('start').addEventListener('click', start);
+
+    /* Avslør ved scroll */
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('synlig'); obs.unobserve(en.target); } });
+    }, { threshold: .15 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
   </script>
 </body>
 </html>
